@@ -152,7 +152,7 @@
                 } else if (typeof err === 'string') {
                     setStatusNotice(err);
                 } else {
-                    setStatusNotice('An unknown error occured');
+                    setStatusNotice('An unknown error occurred');
                 }
                 setStatusMode('notice');
                 initializing = false;
@@ -165,7 +165,7 @@
             if (missing.length !== 0) {
                 if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
                     // There's a chance that installing the service worker would fix the issue
-                    Promise.race([
+                    Promise.race([ 
                         navigator.serviceWorker.getRegistration().then((registration) => {
                             if (registration != null) {
                                 return Promise.reject(new Error('Service worker already exists.'));
@@ -203,6 +203,18 @@
                 }, displayFailureNotice);
             }
         }());
+    </script>
+
+    <!-- Google AdSense Code -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6633824635928275" crossorigin="anonymous"></script>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-6633824635928275"
+         data-ad-slot="9276528366"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
     </script>
 </body>
 </html>
