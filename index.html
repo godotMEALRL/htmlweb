@@ -3,41 +3,29 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-	<title>First Game Brackeys</title>
+	<title>Godot Game</title>
 	<style>
 		html, body {
 			margin: 0;
 			padding: 0;
-			border: 0;
 			height: 100%;
-			width: 100%;
-			background-color: black;
 			display: flex;
 			justify-content: center;
 			align-items: center;
-		}
-
-		body {
-			overflow: hidden;
-			touch-action: none;
-			color: white;
+			background-color: black;
 		}
 
 		#game-container {
-			position: relative;
 			width: 800px;
 			height: 600px;
-			display: flex;
-			justify-content: center;
-			align-items: center;
+			position: relative;
 		}
 
 		#canvas {
 			width: 800px;
 			height: 600px;
 			display: block;
-			background-color: black;
-			border: 1px solid white; /* Optional for visibility */
+			background-color: black; /* Optional, for visibility */
 		}
 
 		#status {
@@ -47,28 +35,10 @@
 			width: 100%;
 			height: 100%;
 			display: flex;
-			flex-direction: column;
 			justify-content: center;
 			align-items: center;
 			background-color: rgba(36, 36, 36, 0.8);
 			visibility: hidden;
-		}
-
-		#status-progress {
-			display: none;
-			width: 80%;
-		}
-
-		#status-notice {
-			display: none;
-			background-color: #5b3943;
-			border-radius: 0.5rem;
-			border: 1px solid #9b3943;
-			color: #e0e0e0;
-			font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
-			line-height: 1.3;
-			padding: 1rem;
-			text-align: center;
 		}
 	</style>
 </head>
@@ -77,11 +47,9 @@
 		<canvas id="canvas">
 			Your browser does not support the canvas tag.
 		</canvas>
-
 		<div id="status">
-			<img id="status-splash" src="index.png" alt="Loading...">
+			<img id="status-splash" src="index.png" alt="">
 			<progress id="status-progress"></progress>
-			<div id="status-notice"></div>
 		</div>
 	</div>
 
@@ -91,98 +59,41 @@
 
 	<script src="index.js"></script>
 	<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":1790224,"index.wasm":35376909},"focusCanvas":true,"gdextensionLibs":[]};
-const GODOT_THREADS_ENABLED = false;
+const GODOT_CONFIG = {
+	"canvasResizePolicy": 1, // "Fit" mode
+	"args": [],
+	"ensureCrossOriginIsolationHeaders": true,
+	"executable": "index",
+	"fileSizes": {"index.pck": 1790224, "index.wasm": 35376909}
+};
+
 const engine = new Engine(GODOT_CONFIG);
 
 (function () {
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
-	const statusNotice = document.getElementById('status-notice');
-
-	let initializing = true;
-	let statusMode = '';
 
 	function setStatusMode(mode) {
-		if (statusMode === mode || !initializing) {
-			return;
-		}
-		if (mode === 'hidden') {
-			statusOverlay.remove();
-			initializing = false;
-			return;
-		}
-		statusOverlay.style.visibility = 'visible';
+		statusOverlay.style.visibility = mode === 'hidden' ? 'hidden' : 'visible';
 		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
-		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
-		statusMode = mode;
 	}
 
-	function setStatusNotice(text) {
-		while (statusNotice.lastChild) {
-			statusNotice.removeChild(statusNotice.lastChild);
-		}
-		const lines = text.split('\n');
-		lines.forEach((line) => {
-			statusNotice.appendChild(document.createTextNode(line));
-			statusNotice.appendChild(document.createElement('br'));
-		});
-	}
-
-	function displayFailureNotice(err) {
+	engine.startGame({
+		'onProgress': function (current, total) {
+			if (current > 0 && total > 0) {
+				statusProgress.value = current;
+				statusProgress.max = total;
+			} else {
+				statusProgress.removeAttribute('value');
+				statusProgress.removeAttribute('max');
+			}
+		},
+	}).then(() => {
+		setStatusMode('hidden');
+	}, (err) => {
 		console.error(err);
-		if (err instanceof Error) {
-			setStatusNotice(err.message);
-		} else if (typeof err === 'string') {
-			setStatusNotice(err);
-		} else {
-			setStatusNotice('An unknown error occurred');
-		}
-		setStatusMode('notice');
-		initializing = false;
-	}
-
-	const missing = Engine.getMissingFeatures({
-		threads: GODOT_THREADS_ENABLED,
+		setStatusMode('error');
 	});
-
-	if (missing.length !== 0) {
-		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
-			Promise.race([
-				navigator.serviceWorker.getRegistration().then((registration) => {
-					if (registration != null) {
-						return Promise.reject(new Error('Service worker already exists.'));
-					}
-					return registration;
-				}).then(() => engine.installServiceWorker()),
-				new Promise((resolve) => {
-					setTimeout(() => resolve(), 2000);
-				}),
-			]).catch((err) => {
-				console.error('Error while registering service worker:', err);
-			}).then(() => {
-				window.location.reload();
-			});
-		} else {
-			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
-			displayFailureNotice(missingMsg + missing.join('\n'));
-		}
-	} else {
-		setStatusMode('progress');
-		engine.startGame({
-			'onProgress': function (current, total) {
-				if (current > 0 && total > 0) {
-					statusProgress.value = current;
-					statusProgress.max = total;
-				} else {
-					statusProgress.removeAttribute('value');
-					statusProgress.removeAttribute('max');
-				}
-			},
-		}).then(() => {
-			setStatusMode('hidden');
-		}, displayFailureNotice);
-	}
 }());
 	</script>
 </body>
